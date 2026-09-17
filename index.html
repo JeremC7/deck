@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>16 years, 3 lessons</title>
+<meta name="description" content="16 years, 3 lessons. Jeremy Corman's talk for HELMo marketing students.">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="16 years, 3 lessons">
+<meta property="og:description" content="Sixteen years, year by year, and the three lessons that kept coming back.">
+<meta property="og:image" content="images/title.jpg">
+<meta name="color-scheme" content="dark">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+  :root {
+    --teal-deep: #0a4652;
+    --teal: #127282;
+    --teal-glow: #1f8fa0;
+    --cream: #f7efe1;
+    --cream-60: rgba(247, 239, 225, .6);
+    --cream-15: rgba(247, 239, 225, .15);
+    --coral: #f4586b;
+    --ink: #07303a;
+    --ink-92: rgba(7, 48, 58, .93);
+    --display: "Outfit", "Poppins", "Montserrat", "Segoe UI", sans-serif;
+    --body: "Manrope", "Nunito", "Segoe UI", sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--teal-deep);
+    color: var(--cream);
+    font-family: var(--body);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  button { font-family: var(--body); }
+  button:focus-visible, .ov-item:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+
+  /* Stage and slides */
+  #stage {
+    position: fixed;
+    left: 0; right: 0;
+    top: env(safe-area-inset-top, 0px);
+    bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--teal-deep);
+    cursor: default;
+    user-select: none;
+  }
+  .slide {
+    position: absolute;
+    overflow: hidden;
+    background: radial-gradient(ellipse 70% 90% at 45% 50%, var(--teal-glow) 0%, var(--teal) 45%, var(--teal-deep) 100%);
+    color: var(--cream);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, visibility .35s ease;
+  }
+  .slide.active { opacity: 1; visibility: visible; }
+  .slide .bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .slide .notes { display: none; }
+  .title {
+    position: absolute;
+    left: 6%; top: 12%;
+    margin: 0;
+    display: inline-block;
+    white-space: nowrap;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 16em;
+    line-height: .86;
+    letter-spacing: -.025em;
+    color: var(--cream);
+  }
+  .title span { display: block; }
+  .title .c { color: var(--coral); }
+  .slide.center .title {
+    left: 50%; top: 50%;
+    transform: translate(-50%, -56%);
+    text-align: center;
+  }
+  .sub {
+    position: absolute;
+    left: 6%; bottom: 11.5%;
+    max-width: 58%;
+    display: grid;
+    gap: .35em;
+    font-size: 2.6em;
+    line-height: 1.25;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  .sub p { margin: 0; }
+  .sub .line { color: var(--cream); opacity: .92; }
+  .sub .punch { color: var(--coral); font-weight: 800; font-size: 1.15em; margin-top: .15em; }
+  .slide.has-photo .sub { max-width: 44%; }
+  .slide.center .sub {
+    left: 50%; right: auto; bottom: 16%;
+    transform: translateX(-50%);
+    max-width: 80%;
+    text-align: center;
+    justify-items: center;
+  }
+  .slide.center .sub .line { font-size: 1.2em; }
+  .photo-wrap {
+    position: absolute;
+    right: 6%; top: 50%;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+  .photo {
+    display: block;
+    width: auto; height: auto;
+    max-height: 40em;
+    max-width: 36em;
+    border-radius: 1.2em;
+    background: #fff;
+    transform: rotate(-2deg);
+    box-shadow: 0 2em 5em rgba(0, 0, 0, .45), 0 0 0 .5em rgba(247, 239, 225, .12);
+  }
+  [data-step] {
+    opacity: 0;
+    transform: translateY(.6em);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .photo-wrap[data-step] { transform: translateY(calc(-50% + 1.5em)); }
+  [data-step].on { opacity: 1; transform: none; }
+  .photo-wrap[data-step].on { transform: translateY(-50%); }
+
+  /* HUD */
+  #progress {
+    position: fixed; left: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    height: 3px; width: 0;
+    background: var(--coral);
+    transition: width .35s ease;
+    z-index: 5;
+  }
+  #counter {
+    position: fixed; right: 16px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    font: 700 13px/1 var(--body);
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+    color: var(--cream);
+    opacity: .55;
+    z-index: 5;
+  }
+  #controls {
+    position: fixed; left: 16px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex; gap: 6px;
+    opacity: 0;
+    transition: opacity .3s ease;
+    z-index: 6;
+  }
+  body.show-controls #controls, #controls:focus-within { opacity: 1; }
+  @media (hover: none) { #controls { opacity: .9; } }
+  #controls button, .pill {
+    background: rgba(7, 48, 58, .55);
+    color: var(--cream);
+    border: 1px solid var(--cream-15);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font: 700 13px/1 var(--body);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+  #controls button:hover { background: rgba(7, 48, 58, .85); }
+
+  /* Notes drawer */
+  #notes {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-height: 38vh;
+    overflow: auto;
+    background: var(--ink-92);
+    border-top: 3px solid var(--coral);
+    padding: 16px 24px calc(20px + env(safe-area-inset-bottom, 0px));
+    font: 500 17px/1.55 var(--body);
+    backdrop-filter: blur(10px);
+    z-index: 8;
+  }
+  #notes h2 { margin: 0 0 6px; font: 800 13px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--coral); }
+  #notes p { margin: 0 0 .7em; max-width: 68ch; }
+
+  /* Overlays */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(6, 38, 46, .96);
+    overflow: auto;
+    z-index: 9;
+    padding: 28px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .overlay h2 { margin: 0 0 16px; font: 800 14px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--coral); }
+  #ov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .ov-item {
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 8px;
+    background: radial-gradient(ellipse 70% 90% at 45% 50%, var(--teal-glow) 0%, var(--teal) 45%, var(--teal-deep) 100%);
+    color: var(--cream);
+    text-align: left;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    cursor: pointer;
+    font: 800 clamp(17px, 1.7vw, 24px)/1.05 var(--display);
+    letter-spacing: -.02em;
+  }
+  .ov-item .n { font: 700 11px/1 var(--body); letter-spacing: .1em; opacity: .6; }
+  .ov-item.current { box-shadow: 0 0 0 3px var(--coral); }
+  .ov-item .c { color: var(--coral); }
+  #help .card {
+    max-width: 520px; margin: 0 auto;
+    background: var(--ink-92);
+    border-radius: 12px;
+    padding: 22px 26px;
+  }
+  #help dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; margin: 0; font: 500 15px/1.4 var(--body); }
+  #help dt { font-weight: 800; color: var(--coral); white-space: nowrap; }
+  #help dd { margin: 0; }
+  #help p { font: 500 14px/1.5 var(--body); opacity: .8; }
+
+  /* Presenter window */
+  body.presenter { overflow: auto; background: var(--ink); }
+  body.presenter #stage, body.presenter #progress, body.presenter #counter, body.presenter #controls { display: none; }
+  #presenter {
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 18px;
+    padding: 18px 24px calc(18px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .p-top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; font: 700 14px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+  #p-timer { font-variant-numeric: tabular-nums; cursor: pointer; font-size: 22px; letter-spacing: .04em; text-transform: none; }
+  .p-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 28px; min-height: 0; }
+  .p-now .lbl, .p-next .lbl { font: 800 12px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--coral); margin-bottom: 8px; }
+  .p-now .big { font: 800 clamp(34px, 6vw, 84px)/.95 var(--display); letter-spacing: -.03em; margin: 0 0 14px; }
+  .p-now .big .c { color: var(--coral); }
+  .p-now .step { font: 700 15px/1.4 var(--body); opacity: .85; }
+  .p-next { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--cream-15); }
+  .p-next .nx { font: 800 clamp(20px, 2.6vw, 34px)/1.1 var(--display); letter-spacing: -.02em; opacity: .75; }
+  .p-notes { overflow: auto; font: 500 clamp(17px, 1.55vw, 23px)/1.55 var(--body); padding-right: 6px; }
+  .p-notes p { margin: 0 0 .8em; }
+  .p-bottom { display: flex; gap: 10px; align-items: center; }
+  .p-bottom .pill { font-size: 15px; padding: 10px 18px; }
+  @media (max-width: 760px) {
+    .p-main { grid-template-columns: 1fr; }
+    #notes { font-size: 15px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide, [data-step], #progress, #controls { transition: none; }
+  }
+
+  /* 16 years, 3 lessons */
+  :root { --l1: #f4586b; --l2: #ffc65c; --l3: #f7efe1; }
+  .slide.story::after, .slide.cover::after {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(7, 48, 58, .66) 0%, rgba(7, 48, 58, .34) 44%, rgba(7, 48, 58, 0) 66%),
+      linear-gradient(0deg, rgba(7, 48, 58, .55) 0%, rgba(7, 48, 58, 0) 16%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .head, .lesson, .tl, .week, .recap, .ask, .cover-text { z-index: 2; }
+  .photo-wrap { z-index: 3; }
+  .head {
+    position: absolute;
+    left: 6%; top: 8%;
+    max-width: 56%;
+    display: grid;
+    gap: .9em;
+    text-shadow: 0 .06em .5em rgba(0, 0, 0, .25);
+  }
+  .head p { margin: 0; }
+  .year {
+    font: 800 3.2em/1 var(--display);
+    letter-spacing: .04em;
+    color: var(--coral);
+    font-variant-numeric: tabular-nums;
+  }
+  .chapter {
+    font: 800 6.2em/.98 var(--display);
+    letter-spacing: -.025em;
+    color: var(--cream);
+    text-wrap: balance;
+  }
+  .detail {
+    font: 600 2.9em/1.2 var(--display);
+    color: rgba(247, 239, 225, .86);
+    text-wrap: balance;
+    max-width: 22em;
+  }
+  .lesson {
+    position: absolute;
+    left: 6%; bottom: 15%;
+    max-width: 54%;
+    text-shadow: 0 .06em .45em rgba(0, 0, 0, .3);
+  }
+  .lesson p { margin: 0; }
+  .lesson .tag {
+    display: inline-flex; align-items: center; gap: .6em;
+    font: 800 1.7em/1 var(--body);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: .7em;
+  }
+  .lesson .tag::before { content: ""; width: .8em; height: .8em; border-radius: 50%; background: currentColor; }
+  .lesson .line { font: 700 4.2em/1.08 var(--display); letter-spacing: -.012em; text-wrap: balance; }
+  .l1 { color: var(--l1); }
+  .l2 { color: var(--l2); }
+  .l3 { color: var(--l3); }
+  .lesson.on-coral, .lesson.on-coral .tag { color: var(--cream); }
+
+  /* timeline */
+  .tl { position: absolute; left: 6%; right: 6%; bottom: 5.5%; height: 3.4em; }
+  .tl-line { position: absolute; left: 0; right: 0; top: .5em; height: .22em; border-radius: 1em; background: rgba(247, 239, 225, .22); }
+  .tl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 1em; background: var(--coral); }
+  .tl-tick { position: absolute; top: 0; transform: translateX(-50%); display: grid; justify-items: center; gap: .5em; }
+  .tl-tick i { width: 1.2em; height: 1.2em; border-radius: 50%; background: var(--teal-deep); box-shadow: inset 0 0 0 .22em rgba(247, 239, 225, .45); }
+  .tl-tick b { font: 700 1.3em/1 var(--body); color: rgba(247, 239, 225, .55); font-variant-numeric: tabular-nums; }
+  .tl-tick.past i { background: var(--coral); box-shadow: none; }
+  .tl-tick.now i { width: 1.7em; height: 1.7em; margin-top: -.25em; background: var(--coral); box-shadow: 0 0 0 .35em rgba(244, 88, 107, .3); }
+  .tl-tick.now b { color: var(--cream); font-weight: 800; }
+  .tl.on-coral .tl-fill, .tl.on-coral .tl-tick.past i, .tl.on-coral .tl-tick.now i { background: var(--cream); }
+  .tl.on-coral .tl-tick.now i { box-shadow: 0 0 0 .35em rgba(247, 239, 225, .3); }
+  .tl.on-coral .tl-tick i { background: var(--coral); }
+  .tl.on-coral .tl-line { background: rgba(247, 239, 225, .35); }
+  .tl.on-coral .tl-tick b { color: rgba(247, 239, 225, .8); }
+
+  /* reveal photo */
+  .slide.story .photo-wrap { right: 5%; top: 50%; }
+  .slide.story .photo { max-height: 27em; max-width: 24em; }
+
+  /* San Francisco: full-screen evidence */
+  .fullshot {
+    position: absolute; inset: 0;
+    margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(4, 30, 37, .95);
+    z-index: 4;
+  }
+  .fullshot img { max-width: 88%; max-height: 86%; border-radius: .6em; box-shadow: 0 2em 5em rgba(0, 0, 0, .5); }
+  .fullshot.wall img { background: #fff; padding: 2.4em; max-width: 84%; box-sizing: border-box; }
+  [data-step].off { opacity: 0; visibility: hidden; }
+
+  /* Airplan: the week */
+  .week {
+    position: absolute;
+    left: 6%; bottom: 17%;
+    width: 50%;
+    display: flex;
+    border-radius: .8em;
+    overflow: hidden;
+    font: 600 2.6em/1.1 var(--display);
+    box-shadow: 0 1em 3em rgba(0, 0, 0, .3);
+  }
+  .week .half { flex: 1; padding: .7em .9em; }
+  .week .half b { display: block; font-weight: 800; font-size: 1.6em; line-height: 1; }
+  .week .airplan { background: var(--coral); color: var(--cream); }
+  .week .talks { background: var(--cream); color: var(--ink); }
+
+  /* cover */
+  .cover-text { position: absolute; left: 6%; top: 50%; transform: translateY(-50%); }
+  .cover-text p { margin: 0; }
+  .cover-title { font: 800 10.5em/.9 var(--display); letter-spacing: -.035em; color: var(--cream); text-shadow: 0 .04em .4em rgba(7, 48, 58, .35); }
+  .cover-title span { display: block; white-space: nowrap; }
+  .cover-title .c { color: var(--coral); }
+  .byline { margin-top: 1.2em !important; font: 700 2.2em/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: rgba(247, 239, 225, .75); }
+
+  /* 2017: the switch */
+  .slide.bascule { background: var(--coral); }
+  .slide.bascule .year.big { font-size: 20em; line-height: .82; letter-spacing: -.04em; color: var(--cream); }
+  .slide.bascule .chapter { font-size: 5.4em; }
+  .slide.bascule .head { text-shadow: 0 .03em .3em rgba(120, 20, 35, .25); }
+
+  /* 2026: the recap */
+  .recap { position: absolute; left: 6%; top: 31%; margin: 0; padding: 0; list-style: none; display: grid; gap: .45em; max-width: 64%; }
+  .recap li { display: flex; align-items: baseline; gap: .55em; font: 800 4.3em/1.05 var(--display); letter-spacing: -.02em; white-space: nowrap; text-shadow: 0 .05em .4em rgba(7, 48, 58, .35); }
+  .recap .n { font-size: .55em; opacity: .8; font-variant-numeric: tabular-nums; }
+  .ask { position: absolute; left: 6%; bottom: 17%; margin: 0; font: 700 3.6em/1.1 var(--display); color: var(--cream); text-shadow: 0 .06em .45em rgba(7, 48, 58, .4); }
+
+  .ov-item { background-size: cover; background-position: center; text-shadow: 0 1px 8px rgba(0, 0, 0, .55); }
+  #notes .cue, .p-notes .cue { font-style: italic; color: var(--coral); }
+</style>
+
+<div id="stage" aria-live="polite">
+
+  <section class="slide cover" data-title="16 years, 3 lessons">
+    <h2 class="sr-only">16 years, 3 lessons</h2>
+    <img class="bg" src="images/title.jpg" alt="Caricature of Jerem holding up three fingers with a sly half-smile.">
+    <div class="cover-text">
+      <p class="cover-title"><span>16 years,</span><span class="c">3 lessons</span></p>
+      <p class="byline">Jeremy Corman · HELMo</p>
+    </div>
+  </section>
+
+  <section class="slide story" data-title="2010 · The internship">
+    <h2 class="sr-only">2010 · The internship</h2>
+    <img class="bg" src="images/02-stage.jpg" alt="Caricature of Jerem on a tiny stool, laptop on his knees, paper planes flying out of the screen.">
+    <div class="head">
+      <p class="year">2010</p>
+      <p class="chapter">The internship</p>
+      <p class="detail">Los Angeles</p>
+    </div>
+    <div class="lesson l1" data-step="1"><p class="tag">Lesson 1 · Go get it</p><p class="line">Don&#x27;t wait to be found. Go get them.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:0.00%"></span></span><span class="tl-tick now" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick " style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick " style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick " style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2010 · First job">
+    <h2 class="sr-only">2010 · First job</h2>
+    <img class="bg" src="images/03-job.jpg" alt="Caricature of Jerem shrugging under a small rain cloud, a coral starting line on the floor.">
+    <div class="head">
+      <p class="year">2010</p>
+      <p class="chapter">First job</p>
+      <p class="detail">Rochefort, underpaid</p>
+    </div>
+    <div class="lesson l2" data-step="1"><p class="tag">Lesson 2 · Start before you&#x27;re ready</p><p class="line">The context is never right. Take the job.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:0.00%"></span></span><span class="tl-tick now" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick " style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick " style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick " style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2010 · 220 km a day">
+    <h2 class="sr-only">2010 · 220 km a day</h2>
+    <img class="bg" src="images/04-micra.jpg" alt="Caricature of Jerem driving a tiny city car with headphones on, books and sound waves trailing behind.">
+    <div class="head">
+      <p class="year">2010</p>
+      <p class="chapter">220 km a day</p>
+      <p class="detail">3 hours in the car</p>
+    </div>
+    <div class="lesson l3" data-step="1"><p class="tag">Lesson 3 · Nothing is wasted</p><p class="line">Dead time is free school.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:0.00%"></span></span><span class="tl-tick now" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick " style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick " style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick " style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2010 · Café Numérique">
+    <h2 class="sr-only">2010 · Café Numérique</h2>
+    <img class="bg" src="images/05-cafe.jpg" alt="Caricature of Jerem behind a bar that doubles as a lab bench, microphone in one hand, bubbling flask in the other.">
+    <div class="head">
+      <p class="year">2010</p>
+      <p class="chapter">Café Numérique</p>
+      <p class="detail">Still running, 16 years later</p>
+    </div>
+    <div class="lesson l2" data-step="1"><p class="tag">Lesson 2 · Start before you&#x27;re ready</p><p class="line">No idea? Start a side project anyway.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:0.00%"></span></span><span class="tl-tick now" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick " style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick " style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick " style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2014 · Lampiris">
+    <h2 class="sr-only">2014 · Lampiris</h2>
+    <img class="bg" src="images/06-lampiris.jpg" alt="Caricature of Jerem pushing a huge glowing cube of banknotes, a coral arrow on the floor.">
+    <div class="head">
+      <p class="year">2014</p>
+      <p class="chapter">Lampiris</p>
+      <p class="detail">€1M budget</p>
+    </div>
+    <figure class="photo-wrap" data-step="1"><img class="photo" src="images/lampiris.jpg" alt="Jerem in front of the Lampiris wall."></figure>
+    <div class="lesson l1" data-step="2"><p class="tag">Lesson 1 · Go get it</p><p class="line">Ask for trust, not permission.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:25.00%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick now" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick " style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick " style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2016 · Digital Marketing Canvas">
+    <h2 class="sr-only">2016 · Digital Marketing Canvas</h2>
+    <img class="bg" src="images/canvas-2016.jpg" alt="Caricature of Jerem sticking notes onto a large strategy canvas on an easel, a marker cap between his teeth.">
+    <div class="head">
+      <p class="year">2016</p>
+      <p class="chapter">Digital Marketing Canvas</p>
+      <p class="detail">My know-how, on one page</p>
+    </div>
+    <div class="lesson l3" data-step="1"><p class="tag">Lesson 3 · Nothing is wasted</p><p class="line">Everything you know can become a tool.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:37.50%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick now" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick " style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2017 · Café Numérique goes global">
+    <h2 class="sr-only">2017 · Café Numérique goes global</h2>
+    <img class="bg" src="images/07-monde.jpg" alt="Caricature of Jerem planting coral flags in a globe as tall as he is, a sticker-covered suitcase at his feet.">
+    <div class="head">
+      <p class="year">2017</p>
+      <p class="chapter">Café Numérique goes global</p>
+      <p class="detail">India, Nepal, New York, etc.</p>
+    </div>
+    <div class="lesson l1" data-step="1"><p class="tag">Lesson 1 · Go get it</p><p class="line">Same outbound, bigger map.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:43.75%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick now" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide bascule" data-title="2017 · I quit">
+    <h2 class="sr-only">2017 · I quit</h2>
+    <img class="bg" src="images/08-bascule.jpg" alt="Caricature of Jerem mid-leap off a ledge, on a coral background.">
+    <div class="head">
+      <p class="year big">2017</p>
+      <p class="chapter">I quit</p>
+    </div>
+    <div class="lesson l2 on-coral" data-step="1"><p class="tag">Lesson 2 · Start before you&#x27;re ready</p><p class="line">Nobody tells you you&#x27;re ready.</p></div>
+    <div class="tl on-coral" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:43.75%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick now" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2017 · First product">
+    <h2 class="sr-only">2017 · First product</h2>
+    <img class="bg" src="images/09-produit.jpg" alt="Caricature of Jerem pointing at a small robot arm stamping paperwork in his place.">
+    <div class="head">
+      <p class="year">2017</p>
+      <p class="chapter">First product</p>
+      <p class="detail">Automating my own job</p>
+    </div>
+    <div class="lesson l2" data-step="1"><p class="tag">Lesson 2 · Start before you&#x27;re ready</p><p class="line">No brilliant idea? Automate what annoys you.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:43.75%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick now" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick " style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2018 · First clients">
+    <h2 class="sr-only">2018 · First clients</h2>
+    <img class="bg" src="images/10-client.jpg" alt="Caricature of Jerem shaking hands with an oversized businessman, in front of a row of empty chairs.">
+    <div class="head">
+      <p class="year">2018</p>
+      <p class="chapter">First clients</p>
+      <p class="detail">TotalEnergies, a few others… Not growing. And I didn&#x27;t love it.</p>
+    </div>
+    <div class="lesson l3" data-step="1"><p class="tag">Lesson 3 · Nothing is wasted</p><p class="line">Even the business you quit pays you back.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:50.00%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick past" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick now" style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2018 · Google trainer">
+    <h2 class="sr-only">2018 · Google trainer</h2>
+    <img class="bg" src="images/11-google.jpg" alt="Caricature of Jerem explaining a diagram at a whiteboard, a cardboard rocket at his feet.">
+    <div class="head">
+      <p class="year">2018</p>
+      <p class="chapter">Google trainer</p>
+      <p class="detail">Teaching managers digital marketing</p>
+    </div>
+    <div class="lesson l2" data-step="1"><p class="tag">Lesson 2 · Start before you&#x27;re ready</p><p class="line">Try things to find what you love.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:50.00%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick past" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick now" style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick " style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2019 · San Francisco">
+    <h2 class="sr-only">2019 · San Francisco</h2>
+    <img class="bg" src="images/12-sanfrancisco.jpg" alt="Caricature of Jerem watching his money fly out of his wallet into a cloud, the Golden Gate in the haze.">
+    <div class="head">
+      <p class="year">2019</p>
+      <p class="chapter">San Francisco</p>
+      <p class="detail">€50,000 lost</p>
+    </div>
+    <figure class="fullshot" data-step="1" data-step-out="2"><img src="images/facture-google-2019-redacted.jpg" alt="Google Cloud invoice, October 2019: €16,541.81, account IDs blurred."></figure>
+    <figure class="fullshot wall" data-step="2" data-step-out="3"><img src="images/accelerateurs.jpg" alt="Logo wall: WSL, SPW DGO6, Noshaq, W.IN.G, Novallia, Digital Attraxion, imec, Berkeley SkyDeck, 500 Startups, Y Combinator."></figure>
+    <div class="lesson l3" data-step="3"><p class="tag">Lesson 3 · Nothing is wasted</p><p class="line">An expensive failure is still tuition.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:56.25%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick past" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick past" style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick now" style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick " style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2021 · Freelance Head of Marketing">
+    <h2 class="sr-only">2021 · Freelance Head of Marketing</h2>
+    <img class="bg" src="images/13-autrecote.jpg" alt="Caricature of Jerem stepping through a mirror holding a HIRE ME sign, his reflection holding a HIRING clipboard.">
+    <div class="head">
+      <p class="year">2021</p>
+      <p class="chapter">Freelance Head of Marketing</p>
+      <p class="detail">INK, Houston</p>
+    </div>
+    <div class="lesson l1" data-step="1"><p class="tag">Lesson 1 · Go get it</p><p class="line">Nothing to sell? Sell yourself.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:68.75%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick past" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick past" style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick past" style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick now" style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick " style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story" data-title="2022 · Airplan">
+    <h2 class="sr-only">2022 · Airplan</h2>
+    <img class="bg" src="images/14-airplan.jpg" alt="Caricature of Jerem unrolling a large blueprint with small glowing buildings rising from it.">
+    <div class="head">
+      <p class="year">2022</p>
+      <p class="chapter">Airplan</p>
+      <p class="detail">1,400 architecture firms · 3 partners</p>
+    </div>
+    <div class="week" data-step="1" data-step-out="2" role="img" aria-label="My week: 50% Airplan, 50% AI talks"><span class="half airplan"><b>50%</b> Airplan</span><span class="half talks"><b>50%</b> AI talks</span></div>
+    <div class="lesson l2" data-step="2"><p class="tag">Lesson 2 · Start before you&#x27;re ready</p><p class="line">Sell it before you build it.</p></div>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:75.00%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick past" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick past" style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick past" style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick past" style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick now" style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick " style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+  <section class="slide story final" data-title="2026 · 3 lessons">
+    <h2 class="sr-only">2026 · 3 lessons</h2>
+    <img class="bg" src="images/15-yesand.jpg" alt="Caricature of Jerem with arms wide open, in bright light.">
+    <div class="head">
+      <p class="year">2026</p>
+      <p class="chapter">3 lessons</p>
+    </div>
+    <ol class="recap">
+      <li class="l1" data-step="1"><span class="n">1</span>Go get it</li>
+      <li class="l2" data-step="2"><span class="n">2</span>Start before you&#x27;re ready</li>
+      <li class="l3" data-step="3"><span class="n">3</span>Nothing is wasted</li>
+    </ol>
+    <p class="ask" data-step="4">What will you start?</p>
+    <div class="tl" aria-hidden="true"><span class="tl-line"><span class="tl-fill" style="width:100.00%"></span></span><span class="tl-tick past" style="left:0.00%"><i></i><b>2010</b></span><span class="tl-tick past" style="left:25.00%"><i></i><b>2014</b></span><span class="tl-tick past" style="left:37.50%"><i></i><b>2016</b></span><span class="tl-tick past" style="left:43.75%"><i></i><b>2017</b></span><span class="tl-tick past" style="left:50.00%"><i></i><b>2018</b></span><span class="tl-tick past" style="left:56.25%"><i></i><b>2019</b></span><span class="tl-tick past" style="left:68.75%"><i></i><b>2021</b></span><span class="tl-tick past" style="left:75.00%"><i></i><b>2022</b></span><span class="tl-tick now" style="left:100.00%"><i></i><b>2026</b></span></div>
+  </section>
+
+</div>
+
+<div id="progress"></div>
+<div id="counter">01 / 16</div>
+<div id="controls">
+  <button type="button" data-act="prev" aria-label="Previous slide">‹</button>
+  <button type="button" data-act="next" aria-label="Next slide">›</button>
+  <button type="button" data-act="fullscreen" aria-label="Full screen">⛶</button>
+  <button type="button" data-act="overview">Slides</button>
+  <button type="button" data-act="help" aria-label="Help">?</button>
+</div>
+
+<aside id="notes" hidden>
+  <h2 id="notes-title">Notes</h2>
+  <div id="notes-body"></div>
+</aside>
+
+<div id="overview" class="overlay" hidden>
+  <h2>16 years, 3 lessons · 16 slides</h2>
+  <div id="ov-grid"></div>
+</div>
+
+<div id="help" class="overlay" hidden>
+  <div class="card">
+    <h2>Shortcuts</h2>
+    <dl>
+      <dt>→ · space</dt><dd>next step or slide</dd>
+      <dt>←</dt><dd>previous step or slide</dd>
+      <dt>click</dt><dd>right side of the screen: next, left side: previous</dd>
+      <dt>F</dt><dd>full screen</dd>
+      <dt>Esc</dt><dd>slide overview</dd>
+      <dt>Home · End</dt><dd>first · last slide</dd>
+      <dt>?</dt><dd>this help</dd>
+    </dl>
+    <p>Every slide has its own address: add #/7 to the URL to open slide 7.</p>
+  </div>
+</div>
+
+<div id="presenter" hidden>
+  <div class="p-top">
+    <span id="p-count">Slide 1 / 16</span>
+    <span id="p-timer" title="Click to reset">00:00</span>
+  </div>
+  <div class="p-main">
+    <div>
+      <div class="p-now">
+        <div class="lbl">Now</div>
+        <div class="big" id="p-title"></div>
+        <div class="step" id="p-step"></div>
+      </div>
+      <div class="p-next">
+        <div class="lbl">Next click</div>
+        <div class="nx" id="p-next"></div>
+      </div>
+    </div>
+    <div class="p-notes" id="p-notes"></div>
+  </div>
+  <div class="p-bottom">
+    <button type="button" class="pill" data-act="prev">‹ Previous</button>
+    <button type="button" class="pill" data-act="next">Next ›</button>
+    <button type="button" class="pill" data-act="timer">Timer: start / pause</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var n = slides.length;
+  var stage = document.getElementById('stage');
+  var progress = document.getElementById('progress');
+  var counter = document.getElementById('counter');
+  var notesEl = document.getElementById('notes');
+  var notesTitle = document.getElementById('notes-title');
+  var notesBody = document.getElementById('notes-body');
+  var overview = document.getElementById('overview');
+  var help = document.getElementById('help');
+  var presenterEl = document.getElementById('presenter');
+  var isPresenter = false;
+  var cur = 0, step = 0;
+
+  function maxStep(i) {
+    var m = 0;
+    slides[i].querySelectorAll('[data-step]').forEach(function (el) {
+      m = Math.max(m, parseInt(el.getAttribute('data-step'), 10) || 0);
+    });
+    return m;
+  }
+  function titleHtml(i) {
+    var t = slides[i].querySelector('.title');
+    return t ? t.innerHTML.replace(/<span class="(\w)">/g, function (m, c) { return c === 'c' ? '<span class="c">' : '<span>'; }).replace(/<\/span>/g, '</span> ') : slides[i].getAttribute('data-title');
+  }
+  function titleText(i) { return slides[i].getAttribute('data-title'); }
+  function notesHtml(i) { var nb = slides[i].querySelector('.notes'); return nb ? nb.innerHTML : ''; }
+
+  /* Channel between deck and presenter window */
+  var bc = null;
+  try { bc = new BroadcastChannel('mm-yes-but-deck'); } catch (e) { bc = null; }
+  function send(msg) {
+    if (bc) { bc.postMessage(msg); return; }
+    try { localStorage.setItem('mm-deck-msg', JSON.stringify(Object.assign({ t: Date.now() }, msg))); } catch (e) {}
+  }
+  function listen(fn) {
+    if (bc) { bc.onmessage = function (e) { fn(e.data); }; return; }
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'mm-deck-msg' && e.newValue) { try { fn(JSON.parse(e.newValue)); } catch (err) {} }
+    });
+  }
+
+  /* Layout: letterboxed 16:9 slide, 1em = 1% of slide width */
+  function layout() {
+    var W = stage.clientWidth, H = stage.clientHeight;
+    var w = Math.min(W, H * 16 / 9), h = w * 9 / 16;
+    var left = (W - w) / 2, top = (H - h) / 2;
+    slides.forEach(function (s) {
+      s.style.width = w + 'px'; s.style.height = h + 'px';
+      s.style.left = left + 'px'; s.style.top = top + 'px';
+      s.style.fontSize = (w / 100) + 'px';
+    });
+    fitTitles(w / 100);
+  }
+  function fitTitles(unit) {
+    slides.forEach(function (s) {
+      var t = s.querySelector('.title');
+      if (!t) return;
+      var center = s.classList.contains('center'), photo = s.classList.contains('has-photo');
+      var size = center ? 26 : (photo ? 11 : 14), maxW = (center ? 88 : (photo ? 46 : 62)) * unit;
+      t.style.fontSize = (size * unit) + 'px';
+      var guard = 0;
+      while (t.scrollWidth > maxW && size > 5 && guard++ < 40) {
+        size -= 0.5;
+        t.style.fontSize = (size * unit) + 'px';
+      }
+    });
+  }
+
+  function applySteps(i) {
+    slides[i].querySelectorAll('[data-step]').forEach(function (el) {
+      var k = parseInt(el.getAttribute('data-step'), 10) || 0;
+      var out = parseInt(el.getAttribute('data-step-out'), 10) || 0;
+      el.classList.toggle('on', k <= step && !(out && step >= out));
+      el.classList.toggle('off', !!out && step >= out);
+    });
+  }
+  function pad(x) { return (x < 10 ? '0' : '') + x; }
+
+  function render() {
+    slides.forEach(function (s, k) {
+      var on = k === cur;
+      s.classList.toggle('active', on);
+      s.setAttribute('aria-hidden', on ? 'false' : 'true');
+    });
+    applySteps(cur);
+    progress.style.width = (n > 1 ? (cur / (n - 1)) * 100 : 100) + '%';
+    counter.textContent = pad(cur + 1) + ' / ' + pad(n);
+    notesTitle.textContent = 'Notes · ' + pad(cur + 1) + ' · ' + titleText(cur);
+    notesBody.innerHTML = notesHtml(cur);
+    var want = '#/' + (cur + 1);
+    if (location.hash !== want) { try { history.replaceState(null, '', want); } catch (e) { try { location.hash = want; } catch (e2) {} } }
+    var items = overview.querySelectorAll('.ov-item');
+    items.forEach(function (b, k) { b.classList.toggle('current', k === cur); });
+    if (isPresenter) renderPresenter();
+  }
+
+  function goTo(i, s, silent) {
+    cur = Math.max(0, Math.min(n - 1, i));
+    step = Math.max(0, Math.min(maxStep(cur), s || 0));
+    render();
+    if (!silent) send({ type: 'state', i: cur, s: step });
+  }
+  function next() {
+    if (step < maxStep(cur)) goTo(cur, step + 1);
+    else if (cur < n - 1) goTo(cur + 1, 0);
+  }
+  function prev() {
+    if (step > 0) goTo(cur, step - 1);
+    else if (cur > 0) goTo(cur - 1, maxStep(cur - 1));
+  }
+
+  function toggleFullscreen() {
+    var d = document;
+    if (!d.fullscreenElement) { (d.documentElement.requestFullscreen || function () {}).call(d.documentElement); }
+    else if (d.exitFullscreen) { d.exitFullscreen(); }
+  }
+  function toggle(el) { el.hidden = !el.hidden; }
+  function closeOverlays() { overview.hidden = true; help.hidden = true; }
+  function openPresenter() {
+    var url = location.pathname + '?presenter=1' + '#/' + (cur + 1);
+    var w = window.open(url, 'mm-presenter', 'width=1100,height=720');
+    if (!w) { help.hidden = false; }
+  }
+
+  /* Overview grid */
+  var grid = document.getElementById('ov-grid');
+  slides.forEach(function (s, k) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'ov-item';
+    b.innerHTML = '<span class="n">' + pad(k + 1) + '</span><span>' + titleHtml(k) + '</span>';
+    var bg = s.querySelector('.bg');
+    if (bg) b.style.backgroundImage = 'linear-gradient(rgba(7,48,58,.35), rgba(7,48,58,.6)), url("' + bg.getAttribute('src') + '")';
+    b.addEventListener('click', function () { closeOverlays(); goTo(k, 0); });
+    grid.appendChild(b);
+  });
+
+  /* Presenter view */
+  var timerStart = null, timerElapsed = 0, timerTick = null;
+  function fmt(ms) { var s = Math.floor(ms / 1000); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); }
+  function timerToggle() {
+    if (timerStart) { timerElapsed += Date.now() - timerStart; timerStart = null; clearInterval(timerTick); timerTick = null; }
+    else { timerStart = Date.now(); timerTick = setInterval(drawTimer, 500); }
+    drawTimer();
+  }
+  function timerReset() { timerElapsed = 0; if (timerStart) timerStart = Date.now(); drawTimer(); }
+  function drawTimer() {
+    var t = timerElapsed + (timerStart ? Date.now() - timerStart : 0);
+    document.getElementById('p-timer').textContent = fmt(t);
+  }
+  function renderPresenter() {
+    document.getElementById('p-count').textContent = 'Slide ' + (cur + 1) + ' / ' + n;
+    document.getElementById('p-title').innerHTML = titleHtml(cur);
+    var ms = maxStep(cur);
+    document.getElementById('p-step').textContent = ms ? 'Step ' + step + ' / ' + ms + (step < ms ? ' · click to reveal more' : ' · everything shown') : 'No steps on this slide';
+    var nx = step < ms ? 'Reveal step ' + (step + 1) + ' / ' + ms : (cur < n - 1 ? 'Slide ' + (cur + 2) + ' · ' + titleText(cur + 1) : 'End of deck');
+    document.getElementById('p-next').textContent = nx;
+    document.getElementById('p-notes').innerHTML = notesHtml(cur);
+  }
+
+  /* Input */
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === ' ' || k === 'PageDown' || k === 'Enter') { e.preventDefault(); next(); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); prev(); }
+    else if (k === 'Home') { goTo(0, 0); }
+    else if (k === 'End') { goTo(n - 1, maxStep(n - 1)); }
+    else if (k === 'f' || k === 'F') { toggleFullscreen(); }
+    else if (k === 'Escape') { help.hidden = true; toggle(overview); }
+    else if (k === '?' || k === 'h' || k === 'H') { overview.hidden = true; toggle(help); }
+    else if (k === 't' || k === 'T') { if (isPresenter) timerToggle(); }
+  });
+  stage.addEventListener('click', function (e) {
+    if (e.target.closest('button')) return;
+    var x = e.clientX / window.innerWidth;
+    if (x < 0.25) prev(); else next();
+  });
+  var tx = null;
+  stage.addEventListener('touchstart', function (e) { tx = e.changedTouches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (tx === null) return;
+    var dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 40) { if (dx < 0) next(); else prev(); }
+  }, { passive: true });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var a = b.getAttribute('data-act');
+    if (a === 'prev') prev();
+    else if (a === 'next') next();
+    else if (a === 'fullscreen') toggleFullscreen();
+    else if (a === 'overview') { help.hidden = true; toggle(overview); }
+    else if (a === 'help') { overview.hidden = true; toggle(help); }
+    else if (a === 'timer') timerToggle();
+  });
+  document.getElementById('p-timer').addEventListener('click', timerReset);
+  var hideTimer = null;
+  document.addEventListener('mousemove', function () {
+    document.body.classList.add('show-controls');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { document.body.classList.remove('show-controls'); }, 2500);
+  });
+  window.addEventListener('hashchange', function () {
+    var m = location.hash.match(/^#\/(\d+)/);
+    if (m) { var i = parseInt(m[1], 10) - 1; if (i !== cur) goTo(i, 0); }
+  });
+  window.addEventListener('resize', layout);
+
+  /* Sync */
+  listen(function (m) {
+    if (!m || !m.type) return;
+    if (isPresenter) { if (m.type === 'state') goTo(m.i, m.s, true); }
+    else {
+      if (m.type === 'goto') goTo(m.i, m.s, true);
+      if (m.type === 'hello') send({ type: 'state', i: cur, s: step });
+    }
+  });
+  if (isPresenter) {
+    document.body.classList.add('presenter');
+    presenterEl.hidden = false;
+    var _goTo = goTo;
+    goTo = function (i, s, silent) { _goTo(i, s, true); if (!silent) send({ type: 'goto', i: cur, s: step }); };
+    send({ type: 'hello' });
+    timerToggle();
+  }
+
+  /* Boot */
+  var m0 = location.hash.match(/^#\/(\d+)/);
+  layout();
+  goTo(m0 ? parseInt(m0[1], 10) - 1 : 0, 0, true);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  window.addEventListener('load', layout);
+})();
+</script>
+
+</body>
+</html>
