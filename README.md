@@ -1,9 +1,15 @@
-# 16 years, 3 lessons
+# Talks · deck.marketing-makers.com
 
-Slides for Jeremy Corman's talk to HELMo marketing students. Audience version: no speaker notes.
+Static site. The home page lists every deck; each deck lives in its own folder.
 
-- Arrows or space: next · click the right or left side of the screen · swipe on mobile
-- F: full screen · Esc: overview · ?: help
-- Every slide has its own address: `#/7` opens slide 7.
+    /                     library of decks (generated from tools/decks.json)
+    /<slug>/              audience version, no speaker notes
+    /<slug>/speaker/      same deck with the spoken script in its notes
 
-Served at deck.marketing-makers.com through GitHub Pages (`CNAME` is already set).
+Rebuild from the working folder (passation-deck-helmo):
+
+    python3 tools/build.py . tools/engine-v2.html build/share --share
+    python3 tools/build.py . tools/engine-v2.html build/presenter
+    python3 tools/site.py github-pages
+
+Then copy build/share into <slug>/ and build/presenter into <slug>/speaker/ (rewriting images/ to ../images/).
