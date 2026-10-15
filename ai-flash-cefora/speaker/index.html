@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Flash · IA &amp; marketing</title>
+<meta name="description" content="Créer, réutiliser et contrôler du contenu avec l&#x27;IA. Webinaire Cefora de Jeremy Corman, octobre 2026.">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="AI Flash · IA &amp; marketing">
+<meta property="og:description" content="Créer, réutiliser et contrôler du contenu avec l&#x27;IA. Webinaire Cefora de Jeremy Corman, octobre 2026.">
+<meta property="og:image" content="../images/s-01.jpg">
+<meta name="color-scheme" content="dark">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+  :root {
+    --teal-deep: #0a4652;
+    --teal: #127282;
+    --teal-glow: #1f8fa0;
+    --cream: #f7efe1;
+    --cream-60: rgba(247, 239, 225, .6);
+    --cream-15: rgba(247, 239, 225, .15);
+    --coral: #f4586b;
+    --ink: #07303a;
+    --ink-92: rgba(7, 48, 58, .93);
+    --display: "Outfit", "Poppins", "Montserrat", "Segoe UI", sans-serif;
+    --body: "Manrope", "Nunito", "Segoe UI", sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--teal-deep);
+    color: var(--cream);
+    font-family: var(--body);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  button { font-family: var(--body); }
+  button:focus-visible, .ov-item:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+
+  /* Stage and slides */
+  #stage {
+    position: fixed;
+    left: 0; right: 0;
+    top: env(safe-area-inset-top, 0px);
+    bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--teal-deep);
+    cursor: default;
+    user-select: none;
+  }
+  .slide {
+    position: absolute;
+    overflow: hidden;
+    background: radial-gradient(ellipse 70% 90% at 45% 50%, var(--teal-glow) 0%, var(--teal) 45%, var(--teal-deep) 100%);
+    color: var(--cream);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, visibility .35s ease;
+  }
+  .slide.active { opacity: 1; visibility: visible; }
+  .slide .bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .slide .notes { display: none; }
+  .title {
+    position: absolute;
+    left: 6%; top: 12%;
+    margin: 0;
+    display: inline-block;
+    white-space: nowrap;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 16em;
+    line-height: .86;
+    letter-spacing: -.025em;
+    color: var(--cream);
+  }
+  .title span { display: block; }
+  .title .c { color: var(--coral); }
+  .slide.center .title {
+    left: 50%; top: 50%;
+    transform: translate(-50%, -56%);
+    text-align: center;
+  }
+  .sub {
+    position: absolute;
+    left: 6%; bottom: 11.5%;
+    max-width: 58%;
+    display: grid;
+    gap: .35em;
+    font-size: 2.6em;
+    line-height: 1.25;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  .sub p { margin: 0; }
+  .sub .line { color: var(--cream); opacity: .92; }
+  .sub .punch { color: var(--coral); font-weight: 800; font-size: 1.15em; margin-top: .15em; }
+  .slide.has-photo .sub { max-width: 44%; }
+  .slide.center .sub {
+    left: 50%; right: auto; bottom: 16%;
+    transform: translateX(-50%);
+    max-width: 80%;
+    text-align: center;
+    justify-items: center;
+  }
+  .slide.center .sub .line { font-size: 1.2em; }
+  .photo-wrap {
+    position: absolute;
+    right: 6%; top: 50%;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+  .photo {
+    display: block;
+    width: auto; height: auto;
+    max-height: 40em;
+    max-width: 36em;
+    border-radius: 1.2em;
+    background: #fff;
+    transform: rotate(-2deg);
+    box-shadow: 0 2em 5em rgba(0, 0, 0, .45), 0 0 0 .5em rgba(247, 239, 225, .12);
+  }
+  [data-step] {
+    opacity: 0;
+    transform: translateY(.6em);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .photo-wrap[data-step] { transform: translateY(calc(-50% + 1.5em)); }
+  [data-step].on { opacity: 1; transform: none; }
+  .photo-wrap[data-step].on { transform: translateY(-50%); }
+
+  /* HUD */
+  #progress {
+    position: fixed; left: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    height: 3px; width: 0;
+    background: var(--coral);
+    transition: width .35s ease;
+    z-index: 5;
+  }
+  #counter {
+    position: fixed; right: 16px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    font: 700 13px/1 var(--body);
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+    color: var(--cream);
+    opacity: .55;
+    z-index: 5;
+  }
+  #controls {
+    position: fixed; left: 16px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex; gap: 6px;
+    opacity: 0;
+    transition: opacity .3s ease;
+    z-index: 6;
+  }
+  body.show-controls #controls, #controls:focus-within { opacity: 1; }
+  @media (hover: none) { #controls { opacity: .9; } }
+  #controls button, .pill {
+    background: rgba(7, 48, 58, .55);
+    color: var(--cream);
+    border: 1px solid var(--cream-15);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font: 700 13px/1 var(--body);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+  #controls button:hover { background: rgba(7, 48, 58, .85); }
+
+  /* Notes drawer */
+  #notes {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-height: 38vh;
+    overflow: auto;
+    background: var(--ink-92);
+    border-top: 3px solid var(--coral);
+    padding: 16px 24px calc(20px + env(safe-area-inset-bottom, 0px));
+    font: 500 17px/1.55 var(--body);
+    backdrop-filter: blur(10px);
+    z-index: 8;
+  }
+  #notes h2 { margin: 0 0 6px; font: 800 13px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--coral); }
+  #notes p { margin: 0 0 .7em; max-width: 68ch; }
+
+  /* Overlays */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(6, 38, 46, .96);
+    overflow: auto;
+    z-index: 9;
+    padding: 28px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .overlay h2 { margin: 0 0 16px; font: 800 14px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--coral); }
+  #ov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .ov-item {
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 8px;
+    background: radial-gradient(ellipse 70% 90% at 45% 50%, var(--teal-glow) 0%, var(--teal) 45%, var(--teal-deep) 100%);
+    color: var(--cream);
+    text-align: left;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    cursor: pointer;
+    font: 800 clamp(17px, 1.7vw, 24px)/1.05 var(--display);
+    letter-spacing: -.02em;
+  }
+  .ov-item .n { font: 700 11px/1 var(--body); letter-spacing: .1em; opacity: .6; }
+  .ov-item.current { box-shadow: 0 0 0 3px var(--coral); }
+  .ov-item .c { color: var(--coral); }
+  #help .card {
+    max-width: 520px; margin: 0 auto;
+    background: var(--ink-92);
+    border-radius: 12px;
+    padding: 22px 26px;
+  }
+  #help dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; margin: 0; font: 500 15px/1.4 var(--body); }
+  #help dt { font-weight: 800; color: var(--coral); white-space: nowrap; }
+  #help dd { margin: 0; }
+  #help p { font: 500 14px/1.5 var(--body); opacity: .8; }
+
+  /* Presenter window */
+  body.presenter { overflow: auto; background: var(--ink); }
+  body.presenter #stage, body.presenter #progress, body.presenter #counter, body.presenter #controls { display: none; }
+  #presenter {
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 18px;
+    padding: 18px 24px calc(18px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .p-top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; font: 700 14px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+  #p-timer { font-variant-numeric: tabular-nums; cursor: pointer; font-size: 22px; letter-spacing: .04em; text-transform: none; }
+  .p-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 28px; min-height: 0; }
+  .p-now .lbl, .p-next .lbl { font: 800 12px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--coral); margin-bottom: 8px; }
+  .p-now .big { font: 800 clamp(34px, 6vw, 84px)/.95 var(--display); letter-spacing: -.03em; margin: 0 0 14px; }
+  .p-now .big .c { color: var(--coral); }
+  .p-now .step { font: 700 15px/1.4 var(--body); opacity: .85; }
+  .p-next { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--cream-15); }
+  .p-next .nx { font: 800 clamp(20px, 2.6vw, 34px)/1.1 var(--display); letter-spacing: -.02em; opacity: .75; }
+  .p-notes { overflow: auto; font: 500 clamp(17px, 1.55vw, 23px)/1.55 var(--body); padding-right: 6px; }
+  .p-notes p { margin: 0 0 .8em; }
+  .p-bottom { display: flex; gap: 10px; align-items: center; }
+  .p-bottom .pill { font-size: 15px; padding: 10px 18px; }
+  @media (max-width: 760px) {
+    .p-main { grid-template-columns: 1fr; }
+    #notes { font-size: 15px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide, [data-step], #progress, #controls { transition: none; }
+  }
+
+  /* 16 years, 3 lessons */
+  :root { --l1: #f4586b; --l2: #ffc65c; --l3: #f7efe1; }
+  .slide.story::after, .slide.cover::after {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(7, 48, 58, .66) 0%, rgba(7, 48, 58, .34) 44%, rgba(7, 48, 58, 0) 66%),
+      linear-gradient(0deg, rgba(7, 48, 58, .55) 0%, rgba(7, 48, 58, 0) 16%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .head, .lesson, .tl, .week, .recap, .ask, .cover-text { z-index: 2; }
+  .photo-wrap { z-index: 3; }
+  .head {
+    position: absolute;
+    left: 6%; top: 8%;
+    max-width: 56%;
+    display: grid;
+    gap: .9em;
+    text-shadow: 0 .06em .5em rgba(0, 0, 0, .25);
+  }
+  .head p { margin: 0; }
+  .year {
+    font: 800 3.2em/1 var(--display);
+    letter-spacing: .04em;
+    color: var(--coral);
+    font-variant-numeric: tabular-nums;
+  }
+  .chapter {
+    font: 800 6.2em/.98 var(--display);
+    letter-spacing: -.025em;
+    color: var(--cream);
+    text-wrap: balance;
+  }
+  .detail {
+    font: 600 2.9em/1.2 var(--display);
+    color: rgba(247, 239, 225, .86);
+    text-wrap: balance;
+    max-width: 22em;
+  }
+  .lesson {
+    position: absolute;
+    left: 6%; bottom: 15%;
+    max-width: 54%;
+    text-shadow: 0 .06em .45em rgba(0, 0, 0, .3);
+  }
+  .lesson p { margin: 0; }
+  .lesson .tag {
+    display: inline-flex; align-items: center; gap: .6em;
+    font: 800 1.7em/1 var(--body);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: .7em;
+  }
+  .lesson .tag::before { content: ""; width: .8em; height: .8em; border-radius: 50%; background: currentColor; }
+  .lesson .line { font: 700 4.2em/1.08 var(--display); letter-spacing: -.012em; text-wrap: balance; }
+  .l1 { color: var(--l1); }
+  .l2 { color: var(--l2); }
+  .l3 { color: var(--l3); }
+  .lesson.on-coral, .lesson.on-coral .tag { color: var(--cream); }
+
+  /* timeline */
+  .tl { position: absolute; left: 6%; right: 6%; bottom: 5.5%; height: 3.4em; }
+  .tl-line { position: absolute; left: 0; right: 0; top: .5em; height: .22em; border-radius: 1em; background: rgba(247, 239, 225, .22); }
+  .tl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 1em; background: var(--coral); }
+  .tl-tick { position: absolute; top: 0; transform: translateX(-50%); display: grid; justify-items: center; gap: .5em; }
+  .tl-tick i { width: 1.2em; height: 1.2em; border-radius: 50%; background: var(--teal-deep); box-shadow: inset 0 0 0 .22em rgba(247, 239, 225, .45); }
+  .tl-tick b { font: 700 1.3em/1 var(--body); color: rgba(247, 239, 225, .55); font-variant-numeric: tabular-nums; }
+  .tl-tick.past i { background: var(--coral); box-shadow: none; }
+  .tl-tick.now i { width: 1.7em; height: 1.7em; margin-top: -.25em; background: var(--coral); box-shadow: 0 0 0 .35em rgba(244, 88, 107, .3); }
+  .tl-tick.now b { color: var(--cream); font-weight: 800; }
+  .tl.on-coral .tl-fill, .tl.on-coral .tl-tick.past i, .tl.on-coral .tl-tick.now i { background: var(--cream); }
+  .tl.on-coral .tl-tick.now i { box-shadow: 0 0 0 .35em rgba(247, 239, 225, .3); }
+  .tl.on-coral .tl-tick i { background: var(--coral); }
+  .tl.on-coral .tl-line { background: rgba(247, 239, 225, .35); }
+  .tl.on-coral .tl-tick b { color: rgba(247, 239, 225, .8); }
+
+  /* reveal photo */
+  .slide.story .photo-wrap { right: 5%; top: 50%; }
+  .slide.story .photo { max-height: 27em; max-width: 24em; }
+
+  /* San Francisco: full-screen evidence */
+  .fullshot {
+    position: absolute; inset: 0;
+    margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(4, 30, 37, .95);
+    z-index: 4;
+  }
+  .fullshot img { max-width: 88%; max-height: 86%; border-radius: .6em; box-shadow: 0 2em 5em rgba(0, 0, 0, .5); }
+  .fullshot.wall img { background: #fff; padding: 2.4em; max-width: 84%; box-sizing: border-box; }
+  [data-step].off { opacity: 0; visibility: hidden; }
+
+  /* Airplan: the week */
+  .week {
+    position: absolute;
+    left: 6%; bottom: 17%;
+    width: 50%;
+    display: flex;
+    border-radius: .8em;
+    overflow: hidden;
+    font: 600 2.6em/1.1 var(--display);
+    box-shadow: 0 1em 3em rgba(0, 0, 0, .3);
+  }
+  .week .half { flex: 1; padding: .7em .9em; }
+  .week .half b { display: block; font-weight: 800; font-size: 1.6em; line-height: 1; }
+  .week .airplan { background: var(--coral); color: var(--cream); }
+  .week .talks { background: var(--cream); color: var(--ink); }
+
+  /* cover */
+  .cover-text { position: absolute; left: 6%; top: 50%; transform: translateY(-50%); }
+  .cover-text p { margin: 0; }
+  .cover-title { font: 800 10.5em/.9 var(--display); letter-spacing: -.035em; color: var(--cream); text-shadow: 0 .04em .4em rgba(7, 48, 58, .35); }
+  .cover-title span { display: block; white-space: nowrap; }
+  .cover-title .c { color: var(--coral); }
+  .byline { margin-top: 1.2em !important; font: 700 2.2em/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: rgba(247, 239, 225, .75); }
+
+  /* 2017: the switch */
+  .slide.bascule { background: var(--coral); }
+  .slide.bascule .year.big { font-size: 20em; line-height: .82; letter-spacing: -.04em; color: var(--cream); }
+  .slide.bascule .chapter { font-size: 5.4em; }
+  .slide.bascule .head { text-shadow: 0 .03em .3em rgba(120, 20, 35, .25); }
+
+  /* 2026: the recap */
+  .recap { position: absolute; left: 6%; top: 31%; margin: 0; padding: 0; list-style: none; display: grid; gap: .45em; max-width: 64%; }
+  .recap li { display: flex; align-items: baseline; gap: .55em; font: 800 4.3em/1.05 var(--display); letter-spacing: -.02em; white-space: nowrap; text-shadow: 0 .05em .4em rgba(7, 48, 58, .35); }
+  .recap .n { font-size: .55em; opacity: .8; font-variant-numeric: tabular-nums; }
+  .ask { position: absolute; left: 6%; bottom: 17%; margin: 0; font: 700 3.6em/1.1 var(--display); color: var(--cream); text-shadow: 0 .06em .45em rgba(7, 48, 58, .4); }
+
+  .ov-item { background-size: cover; background-position: center; text-shadow: 0 1px 8px rgba(0, 0, 0, .55); }
+  #notes .cue, .p-notes .cue { font-style: italic; color: var(--coral); }
+
+  /* Slides image + vidéos intégrées (deck PowerPoint publié) */
+  .slide .bg { object-fit: contain; background: #fff; }
+  .slide .vid { position: absolute; object-fit: contain; background: #000; border-radius: .35em; z-index: 2; }
+</style>
+
+<div id="stage" aria-live="polite">
+
+    <section class="slide" data-title="AI FLASH IA &amp; MARKETING Créer, réutiliser et contrôler du contenu plus intelligemment">
+    <h2 class="sr-only">AI FLASH IA &amp; MARKETING Créer, réutiliser et contrôler du contenu plus intelligemment</h2>
+    <img class="bg" src="../images/s-01.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="JEREMY CORMAN, FORMATEUR EN IA">
+    <h2 class="sr-only">JEREMY CORMAN, FORMATEUR EN IA</h2>
+    <img class="bg" src="../images/s-02.jpg" alt="">
+
+    <div class="notes"><p>Je me présente en trente secondes. Airplan, une start-up liégeoise qui simplifie les permis d&#x27;urbanisme pour les architectes ; Marketing Makers, où j&#x27;aide les PME à faire passer l&#x27;IA d&#x27;un projet flou à un workflow qui tourne ; et je préside le Café Numérique. Tout ce que je vais montrer, je l&#x27;ai fait pour de vrai, chez Airplan ou pour des clients.</p></div>
+  </section>
+
+  <section class="slide" data-title="LE FORMAT N&#x27;A PLUS D&#x27;IMPORTANCE">
+    <h2 class="sr-only">LE FORMAT N&#x27;A PLUS D&#x27;IMPORTANCE</h2>
+    <img class="bg" src="../images/s-03.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="Contrôler le contenu">
+    <h2 class="sr-only">Contrôler le contenu</h2>
+    <img class="bg" src="../images/s-04.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LE CONTENU EST DEVENU UNE COMMODITÉ.">
+    <h2 class="sr-only">LE CONTENU EST DEVENU UNE COMMODITÉ.</h2>
+    <img class="bg" src="../images/s-05.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="TOUT LE MONDE PRODUIT, TOUT SE RESSEMBLE.">
+    <h2 class="sr-only">TOUT LE MONDE PRODUIT, TOUT SE RESSEMBLE.</h2>
+    <img class="bg" src="../images/s-06.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LE CONTENU EST DEVENU UNE COMMODITÉ. LA SOURCE, NON.">
+    <h2 class="sr-only">LE CONTENU EST DEVENU UNE COMMODITÉ. LA SOURCE, NON.</h2>
+    <img class="bg" src="../images/s-07.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="Vidéo ou visio enregistrée">
+    <h2 class="sr-only">Vidéo ou visio enregistrée</h2>
+    <img class="bg" src="../images/s-08.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE VIDÉO, C&#x27;EST :">
+    <h2 class="sr-only">UNE VIDÉO, C&#x27;EST :</h2>
+    <img class="bg" src="../images/s-09.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE VIDÉO C&#x27;EST POTENTIELLEMENT…">
+    <h2 class="sr-only">UNE VIDÉO C&#x27;EST POTENTIELLEMENT…</h2>
+    <img class="bg" src="../images/s-10.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE VIDÉO QUI POURSUIT UN AUTRE OBTECTIF">
+    <h2 class="sr-only">UNE VIDÉO QUI POURSUIT UN AUTRE OBTECTIF</h2>
+    <img class="bg" src="../images/s-11.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LE VOCABULAIRE EN 4 MOTS">
+    <h2 class="sr-only">LE VOCABULAIRE EN 4 MOTS</h2>
+    <img class="bg" src="../images/s-12.jpg" alt="">
+
+    <div class="notes"><p>Quatre mots qui reviennent dans toute la suite. Connecteur (ou MCP) : la prise qui donne à Claude l&#x27;accès à un outil, comme une clé USB pour un logiciel. Skill : une recette écrite une fois (ma charte vidéo, ma newsletter), que Claude relit et applique à chaque fois. Agent : Claude qui enchaîne plusieurs étapes et plusieurs outils sans qu&#x27;on le guide pas à pas, mais qui s&#x27;arrête aux points de validation. Token : environ trois quarts de mot ; c&#x27;est l&#x27;unité facturée par les modèles et la taille de ce qu&#x27;ils peuvent garder en tête dans une conversation.</p></div>
+  </section>
+
+  <section class="slide" data-title="MODÈLES, CONNECTEURS, SKILLS">
+    <h2 class="sr-only">MODÈLES, CONNECTEURS, SKILLS</h2>
+    <img class="bg" src="../images/s-13.jpg" alt="">
+    <video class="vid" style="left:7.896%;top:19.442%;width:84.208%;height:72.980%" src="../videos/c9b2a2c0fa21.mp4" poster="../posters/1947b4252ae1.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>Screencast muet (1 min), filmé dans Claude : l&#x27;interface est la même sur le bureau et sur claude.ai. 1. Le choix du modèle : Opus pour le difficile, Sonnet pour le courant, Haiku pour le rapide, et l&#x27;effort. 2. Le menu + : fichiers, skills, connecteurs. 3. Réglages, Utilisation : ce que consomme l&#x27;abonnement, par session et par semaine. Les tokens se lisent là, pas message par message. 4. Les connecteurs branchés (Gmail, Brevo, Higgsfield, Tella…), qu&#x27;on coupe d&#x27;un clic. 5. Les skills : des recettes écrites une fois.</p></div>
+  </section>
+
+  <section class="slide" data-title="UNE CONVERSATION, UNE SKILL">
+    <h2 class="sr-only">UNE CONVERSATION, UNE SKILL</h2>
+    <img class="bg" src="../images/s-14.jpg" alt="">
+    <video class="vid" style="left:7.896%;top:19.442%;width:84.208%;height:72.980%" src="../videos/ba22f49ee8f0.mp4" poster="../posters/c02709779ed3.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>Screencast muet (1 min 40). 1. Une conversation normale : la newsletter Airplan d&#x27;octobre. 2. « Transforme ce qu&#x27;on vient de faire en skill » : Claude utilise skill-creator et écrit la recette (structure, ton, longueur, appel à l&#x27;action). 3. Un clic pour l&#x27;enregistrer. 4. Son contenu : un fichier texte lisible, qu&#x27;on peut corriger. 5. Le mois suivant, nouvelle conversation : je tape /newsletter-airplan et les nouveautés, la recette se rejoue. C&#x27;est la différence entre un prompt et une méthode.</p></div>
+  </section>
+
+  <section class="slide" data-title="OUTIL UTILISÉ">
+    <h2 class="sr-only">OUTIL UTILISÉ</h2>
+    <img class="bg" src="../images/s-15.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE VIDÉO C&#x27;EST POTENTIELLEMENT…">
+    <h2 class="sr-only">UNE VIDÉO C&#x27;EST POTENTIELLEMENT…</h2>
+    <img class="bg" src="../images/s-16.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE PAGE WEB VOIRE UN CENTRE D&#x27;AIDE COMPLET">
+    <h2 class="sr-only">UNE PAGE WEB VOIRE UN CENTRE D&#x27;AIDE COMPLET</h2>
+    <img class="bg" src="../images/s-17.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="OUTIL UTILISÉ">
+    <h2 class="sr-only">OUTIL UTILISÉ</h2>
+    <img class="bg" src="../images/s-18.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE VIDÉO C&#x27;EST POTENTIELLEMENT…">
+    <h2 class="sr-only">UNE VIDÉO C&#x27;EST POTENTIELLEMENT…</h2>
+    <img class="bg" src="../images/s-19.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UN EMAIL COMMERCIAL">
+    <h2 class="sr-only">UN EMAIL COMMERCIAL</h2>
+    <img class="bg" src="../images/s-20.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="OUTIL(S) UTILISÉ(S)">
+    <h2 class="sr-only">OUTIL(S) UTILISÉ(S)</h2>
+    <img class="bg" src="../images/s-21.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE VIDÉO DE FORMATION DEVIENT QUATRE CONTENUS">
+    <h2 class="sr-only">UNE VIDÉO DE FORMATION DEVIENT QUATRE CONTENUS</h2>
+    <img class="bg" src="../images/s-22.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LES QUESTIONS CLIENTS PAR EMAIL DEVIENNENT POTENTIELLEMENT…">
+    <h2 class="sr-only">LES QUESTIONS CLIENTS PAR EMAIL DEVIENNENT POTENTIELLEMENT…</h2>
+    <img class="bg" src="../images/s-23.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UN CARROUSEL LINKEDIN">
+    <h2 class="sr-only">UN CARROUSEL LINKEDIN</h2>
+    <img class="bg" src="../images/s-24.jpg" alt="">
+
+    <div class="notes"><p>Le carrousel « Vos questions, nos réponses » : 7 vraies questions reçues par e-mail et par le chat en un mois. Version 2 habillée avec le kit vidéo Airplan (halos, barre de progression, pas de sur-titres en capitales) et les fondateurs en touche légère : la couverture est une image générée par Higgsfield à partir de nos fiches personnage (étiquetée « Image générée par IA »), les avatars disent qui répond. Coût de l&#x27;image : 2,75 crédits.</p></div>
+  </section>
+
+  <section class="slide" data-title="OUTIL(S) UTILISÉ(S)">
+    <h2 class="sr-only">OUTIL(S) UTILISÉ(S)</h2>
+    <img class="bg" src="../images/s-25.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="VOS CONVERSATIONS SLACK, EMAILS ET PAGE LINKEDIN DEVIENNENT POTENTIELLEMENT…">
+    <h2 class="sr-only">VOS CONVERSATIONS SLACK, EMAILS ET PAGE LINKEDIN DEVIENNENT POTENTIELLEMENT…</h2>
+    <img class="bg" src="../images/s-26.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LA SOURCE DE VOTRE NEWSLETTER">
+    <h2 class="sr-only">LA SOURCE DE VOTRE NEWSLETTER</h2>
+    <img class="bg" src="../images/s-27.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="COMMENT AMÉLIORER VOS CONTENUS AI DE MANIÈRE CONTINUE… ?">
+    <h2 class="sr-only">COMMENT AMÉLIORER VOS CONTENUS AI DE MANIÈRE CONTINUE… ?</h2>
+    <img class="bg" src="../images/s-28.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="VÉRIFIEZ LES RETOURS QUALITATIFS AVEC DES RÉSULTATS CHIFFRÉS">
+    <h2 class="sr-only">VÉRIFIEZ LES RETOURS QUALITATIFS AVEC DES RÉSULTATS CHIFFRÉS</h2>
+    <img class="bg" src="../images/s-29.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="Édition d&#x27;août (IA) comparée aux cinq éditions précédentes :">
+    <h2 class="sr-only">Édition d&#x27;août (IA) comparée aux cinq éditions précédentes :</h2>
+    <img class="bg" src="../images/s-30.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LE PROMPT VOUS DONNE UNE RÉPONSE. LA MÉTHODE VOUS DONNE DES IDÉES.">
+    <h2 class="sr-only">LE PROMPT VOUS DONNE UNE RÉPONSE. LA MÉTHODE VOUS DONNE DES IDÉES.</h2>
+    <img class="bg" src="../images/s-31.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="DU POST-IT À LA SLIDE">
+    <h2 class="sr-only">DU POST-IT À LA SLIDE</h2>
+    <img class="bg" src="../images/s-32.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LE RÉEL SE FILME, L&#x27;IA FAIT LE RESTE">
+    <h2 class="sr-only">LE RÉEL SE FILME, L&#x27;IA FAIT LE RESTE</h2>
+    <img class="bg" src="../images/s-33.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="IL Y A 2 ANS, JE ME CONTENTAIS DE TRADUIRE/DOUBLER LES VIDÉOS AVEC L&#x27;IA">
+    <h2 class="sr-only">IL Y A 2 ANS, JE ME CONTENTAIS DE TRADUIRE/DOUBLER LES VIDÉOS AVEC L&#x27;IA</h2>
+    <img class="bg" src="../images/s-34.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="CAS RÉEL · AIRPLAN">
+    <h2 class="sr-only">CAS RÉEL · AIRPLAN</h2>
+    <img class="bg" src="../images/s-35.jpg" alt="">
+
+    <div class="notes"><p>En septembre, deux équipes télé sont venues filmer Airplan : Waldorado, puis le G1 Plan sur La Une. On a récupéré tout le matériel brut, avec l&#x27;accord pour le réutiliser. Le réel est déjà filmé, par des pros. La question : qu&#x27;est-ce qu&#x27;on en tire ? Réponse : trois concepts, trois cibles, sans nouveau tournage.</p></div>
+  </section>
+
+  <section class="slide" data-title="UNE MATIÈRE, TROIS VIDÉOS">
+    <h2 class="sr-only">UNE MATIÈRE, TROIS VIDÉOS</h2>
+    <img class="bg" src="../images/s-36.jpg" alt="">
+    <video class="vid" style="left:5.982%;top:17.498%;width:26.794%;height:59.541%" src="../videos/b16e2a59d767.mp4" poster="../posters/64fe2424663d.jpg" controls playsinline preload="none"></video>
+    <video class="vid" style="left:36.603%;top:17.498%;width:26.794%;height:59.541%" src="../videos/88e0be0e3fc8.mp4" poster="../posters/eaf9b338141c.jpg" controls playsinline preload="none"></video>
+    <video class="vid" style="left:67.224%;top:17.498%;width:26.794%;height:59.541%" src="../videos/40eb9a240246.mp4" poster="../posters/a8a4309afd7e.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>Montrer les trois vidéos (MP4 séparés). Même matière, trois montages : le vlog raconte une journée avec une voix off de synthèse, le recrutement cherche un stagiaire IA, « vu dans les médias » s&#x27;ouvre sur un mème des trois fondateurs généré par IA, puis passe au son direct des interviews. Chaque vidéo a sa cible et son appel à l&#x27;action.</p></div>
+  </section>
+
+  <section class="slide" data-title="DU RUSH À LA VIDÉO">
+    <h2 class="sr-only">DU RUSH À LA VIDÉO</h2>
+    <img class="bg" src="../images/s-37.jpg" alt="">
+
+    <div class="notes"><p>À gauche, le process ; à droite, la matière brute, avec les bandeaux des chaînes. 1. La transcription mot à mot permet de chercher dans 5 minutes de rushes comme dans un document. 2. Le recadrage doit sortir tout ce que la chaîne a incrusté. 3. Piège de la voix de synthèse : elle disait « Air-plane ». On écrit « Aire-plan » et on vérifie avec une transcription. 4. Mes retours : « le nom est devant le visage », « la transition à 4 secondes n&#x27;est pas fluide ». L&#x27;agent mesure et corrige. Screencast possible : la recherche d&#x27;une phrase dans la transcription.</p></div>
+  </section>
+
+  <section class="slide" data-title="L&#x27;HUMAIN REPREND LA MAIN">
+    <h2 class="sr-only">L&#x27;HUMAIN REPREND LA MAIN</h2>
+    <img class="bg" src="../images/s-38.jpg" alt="">
+
+    <div class="notes"><p>Le montage fait par l&#x27;IA n&#x27;est pas une boîte noire. Le même projet s&#x27;exporte en timeline (format FCPXML) et s&#x27;ouvre dans DaVinci Resolve, gratuit : chaque plan sur sa piste, les extraits sonores, la musique, les bruitages, les cartes de fin. Un monteur reprend où il veut : rallonger un plan, changer la musique, retoucher la couleur. L&#x27;IA fait le premier jet en quelques minutes, l&#x27;humain garde la main sur le final.</p></div>
+  </section>
+
+  <section class="slide" data-title="34 SECONDES, 7 TEMPS">
+    <h2 class="sr-only">34 SECONDES, 7 TEMPS</h2>
+    <img class="bg" src="../images/s-39.jpg" alt="">
+
+    <div class="notes"><p>La frise du montage final, 34 secondes. Une accroche IA assumée (mème, étiqueté « générée par IA »), un zapping sur le beat, puis le son direct des interviews, et une carte de fin qui remercie les médias. La règle : un visage et un titre lisible sans le son dès la première image, et une seule chose à regarder à la fois.</p></div>
+  </section>
+
+  <section class="slide" data-title="L&#x27;IA A CHANGÉ MA CHEMISE">
+    <h2 class="sr-only">L&#x27;IA A CHANGÉ MA CHEMISE</h2>
+    <img class="bg" src="../images/s-40.jpg" alt="">
+    <video class="vid" style="left:4.374%;top:18.470%;width:20.232%;height:44.960%" src="../videos/65aca3afc27c.mp4" poster="../posters/a35ce4a80ced.jpg" controls playsinline preload="none"></video>
+    <video class="vid" style="left:27.067%;top:18.470%;width:20.232%;height:44.960%" src="../videos/c104cb643537.mp4" poster="../posters/82afcd630adb.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>La fin de la vidéo « formation complète ». Je voulais une vraie vidéo de moi, mais j&#x27;étais en sweat. Higgsfield (outil de remplacement d&#x27;objet) a mis la chemise blanche des autres plans : 77 crédits, environ 3,60 €. Le geste, le regard, le mur : c&#x27;est moi, filmé. On l&#x27;indique à l&#x27;écran, c&#x27;est la règle de l&#x27;AI Act. Screencast : la demande à Claude avec la vidéo et la photo de la chemise, le coût annoncé, puis le résultat.</p></div>
+  </section>
+
+  <section class="slide" data-title="OUTIL(S) UTILISÉ(S)">
+    <h2 class="sr-only">OUTIL(S) UTILISÉ(S)</h2>
+    <img class="bg" src="../images/s-41.jpg" alt="">
+
+    <div class="notes"><p>Deux outils au centre : Claude, qui orchestre (transcriptions, choix des plans, montage en code avec HyperFrames, connecteur Higgsfield), et ElevenLabs pour tout le son. Higgsfield seulement pour deux plans générés : la chemise et le mème. Le reste, c&#x27;est du réel filmé par les journalistes.</p></div>
+  </section>
+
+  <section class="slide" data-title="50 SECONDES, SANS TOURNAGE">
+    <h2 class="sr-only">50 SECONDES, SANS TOURNAGE</h2>
+    <img class="bg" src="../images/s-42.jpg" alt="">
+    <video class="vid" style="left:3.620%;top:12.025%;width:34.177%;height:75.950%" src="../videos/a9b4abfe4e8f.mp4" poster="../posters/7fde80d76c09.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>Montrer le film (MP4 séparé, 50 s). Tout est généré : le studio, la ville, les feuilles, et moi. Point de départ : 4 portraits de moi, face, profil et trois-quarts. La mention « Scène illustrative » reste à l&#x27;écran jusqu&#x27;au logo : c&#x27;est la règle de l&#x27;AI Act vue plus loin.</p></div>
+  </section>
+
+  <section class="slide" data-title="L&#x27;IA A TOUT GÉNÉRÉ.">
+    <h2 class="sr-only">L&#x27;IA A TOUT GÉNÉRÉ.</h2>
+    <img class="bg" src="../images/s-43.jpg" alt="">
+
+    <div class="notes"><p>Ce n&#x27;est pas une contradiction avec « le réel se filme ». Un résultat simulé qui se fait passer pour un fait ment ; une scène illustrative assumée et étiquetée, non. On ne génère jamais le visage de quelqu&#x27;un sans son accord ; ici c&#x27;est mon visage. Deux conditions : le consentement et l&#x27;étiquette.</p></div>
+  </section>
+
+  <section class="slide" data-title="3 VERSIONS, L&#x27;ŒIL TRANCHE">
+    <h2 class="sr-only">3 VERSIONS, L&#x27;ŒIL TRANCHE</h2>
+    <img class="bg" src="../images/s-44.jpg" alt="">
+    <video class="vid" style="left:5.982%;top:17.498%;width:26.794%;height:59.541%" src="../videos/f4f8cd390c0f.mp4" poster="../posters/62f817ab097b.jpg" controls playsinline preload="none"></video>
+    <video class="vid" style="left:67.224%;top:17.498%;width:26.794%;height:59.541%" src="../videos/c104cb643537.mp4" poster="../posters/82afcd630adb.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>Trois versions de la fin du film « formation complète » en une après-midi. Version 1 : une carte animée. Mon retour : je veux une vraie vidéo de moi. On a filmé 10 secondes au téléphone, l&#x27;IA a changé ma chemise. Entre les deux, une version où je me trouvais « pâlot » (non montrée). Version 2 : texte peint dans la chaux et tampon encreur. Joli, mais ça dénotait du reste du film, studio blanc et net. Version 3 : même blanc que le film, textes nets, la chaleur seulement sur le visage. Mes retours tenaient en une phrase ; l&#x27;agent a mesuré (teinte du mur, ton de peau) et refait la version suivante. L&#x27;IA va vite, c&#x27;est l&#x27;œil qui décide.</p></div>
+  </section>
+
+  <section class="slide" data-title="DE L&#x27;IMAGE AU FILM">
+    <h2 class="sr-only">DE L&#x27;IMAGE AU FILM</h2>
+    <img class="bg" src="../images/s-45.jpg" alt="">
+
+    <div class="notes"><p>La ressemblance dérive d&#x27;un plan à l&#x27;autre et d&#x27;un modèle à l&#x27;autre : la fiche personnage fait partie de la bibliothèque de marque. On valide des images clés (environ 3 crédits) avant une vidéo (jusqu&#x27;à 35 crédits). Quand l&#x27;IA rate un geste, le langage du cinéma le rattrape : plusieurs angles, des coupes, un ralenti. Astuce voix de synthèse : écrire le mot comme il se prononce (« Aire-plan »), puis faire transcrire l&#x27;audio pour vérifier qu&#x27;on entend bien « plan » et pas « plane ».</p></div>
+  </section>
+
+  <section class="slide" data-title="CLAUDE PILOTE HIGGSFIELD, JE VALIDE">
+    <h2 class="sr-only">CLAUDE PILOTE HIGGSFIELD, JE VALIDE</h2>
+    <img class="bg" src="../images/s-46.jpg" alt="">
+    <video class="vid" style="left:60.641%;top:36.648%;width:36.253%;height:31.420%" src="../videos/6d27e93abdbf.mp4" poster="../posters/7ae43615f9ec.jpg" controls playsinline preload="none"></video>
+    <div class="notes"><p>Screencast réel (2 min, muet), filmé le 15 octobre dans Claude avec le connecteur Higgsfield. 1. Je décris l&#x27;image et donne mes portraits déjà stockés dans Higgsfield. 2. Claude demande l&#x27;autorisation d&#x27;utiliser l&#x27;outil. 3. Il annonce le devis, 2,75 crédits, et rien ne part. 4. Je valide, la génération démarre. 5. Première image. 6. Je demande une reprise avec mes 4 portraits. 7. Nouveau devis, nouvelle validation. 8. La version retenue. Total : 5,5 crédits, environ 25 centimes. Message : un connecteur n&#x27;est pas de la magie, c&#x27;est un outil branché, et l&#x27;agent s&#x27;arrête là où je dois décider. Vous ressentez, l&#x27;agent mesure : sur une autre vidéo, j&#x27;ai seulement dit « la transition à 4 secondes n&#x27;est pas fluide ». L&#x27;agent a trouvé 4 images parasites d&#x27;un autre plan et un trou dans la musique, les a corrigés, et m&#x27;a montré les mesures avant et après.</p></div>
+  </section>
+
+  <section class="slide" data-title="AUTRES EXEMPLES">
+    <h2 class="sr-only">AUTRES EXEMPLES</h2>
+    <img class="bg" src="../images/s-47.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="CAS USAGE QUE L&#x27;IA FAIT TRÈS BIEN">
+    <h2 class="sr-only">CAS USAGE QUE L&#x27;IA FAIT TRÈS BIEN</h2>
+    <img class="bg" src="../images/s-48.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="COMMENT AMÉLIORER VOS VIDÉOS IA ?">
+    <h2 class="sr-only">COMMENT AMÉLIORER VOS VIDÉOS IA ?</h2>
+    <img class="bg" src="../images/s-49.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="3 RÈGLES POUR DES VIDÉOS IA">
+    <h2 class="sr-only">3 RÈGLES POUR DES VIDÉOS IA</h2>
+    <img class="bg" src="../images/s-50.jpg" alt="">
+
+    <div class="notes"><p>Les trois leçons du film. 1. Images d&#x27;abord : on dérushe des images, pas des vidéos. 2. Chaque modèle a son métier : Genjutsu recopie le mouvement d&#x27;une vidéo de référence, Seedance tient l&#x27;identité grâce aux portraits, Kling est rapide et bon marché pour les plans sans visage. 3. La fiche personnage est un actif de marque, au même titre que le logo : sans elle, le visage change d&#x27;un plan à l&#x27;autre. Même chose pour le style : un effet réussi (texte à la chaux, tampon encreur) peut casser le film s&#x27;il sort de la palette. La fin reprend les couleurs et les cartes du reste.</p></div>
+  </section>
+
+  <section class="slide" data-title="SE CRÉER UNE BIBLIOTHÈQUE, UNE PLATEFORME DE MARQUE">
+    <h2 class="sr-only">SE CRÉER UNE BIBLIOTHÈQUE, UNE PLATEFORME DE MARQUE</h2>
+    <img class="bg" src="../images/s-51.jpg" alt="">
+    <video class="vid" style="left:57.901%;top:30.735%;width:38.529%;height:38.529%" src="../videos/d8a2755bcd2e.mp4" poster="../posters/666a6d6937cc.jpg" controls playsinline preload="none"></video>
+  </section>
+
+  <section class="slide" data-title="LE COÛT DE PRODUCTION EST PASSÉ SOUS LE COÛT DE COORDINATION">
+    <h2 class="sr-only">LE COÛT DE PRODUCTION EST PASSÉ SOUS LE COÛT DE COORDINATION</h2>
+    <img class="bg" src="../images/s-52.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UN FILM DE 50 SECONDES : 16 € DE CRÉDITS Le vrai coût : mes allers-retours de validation.">
+    <h2 class="sr-only">UN FILM DE 50 SECONDES : 16 € DE CRÉDITS Le vrai coût : mes allers-retours de validation.</h2>
+    <img class="bg" src="../images/s-53.jpg" alt="">
+
+    <div class="notes"><p>339 crédits Higgsfield au total pour le film, reprises comprises (Motion Transfer 182 crédits, images clés, Seedance, Kling), soit environ 16 € sur un abonnement Plus à 56 € pour 1 200 crédits. Ce qui a pris du temps : vérifier la ressemblance, refaire deux images clés, recaler la musique. C&#x27;est exactement le coût de coordination.</p></div>
+  </section>
+
+  <section class="slide" data-title="QUAND TOUT LE MONDE PRODUIT, DES DÉRIVES APPARAISSENT">
+    <h2 class="sr-only">QUAND TOUT LE MONDE PRODUIT, DES DÉRIVES APPARAISSENT</h2>
+    <img class="bg" src="../images/s-54.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="AI Act">
+    <h2 class="sr-only">AI Act</h2>
+    <img class="bg" src="../images/s-55.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LES BONS RÉFLEXES">
+    <h2 class="sr-only">LES BONS RÉFLEXES</h2>
+    <img class="bg" src="../images/s-56.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="LES BONS RÉFLEXES AVEC UN AGENT">
+    <h2 class="sr-only">LES BONS RÉFLEXES AVEC UN AGENT</h2>
+    <img class="bg" src="../images/s-57.jpg" alt="">
+
+    <div class="notes"><p>Les quatre réflexes de la slide précédente restent valables ; un agent en ajoute quatre. D&#x27;où viennent le mouvement et la musique qu&#x27;on réutilise ? La personne filmée ou imitée a-t-elle dit oui ? L&#x27;agent annonce-t-il ce qu&#x27;il va dépenser ? Et qui appuie sur le bouton quand c&#x27;est payant ou public : toujours un humain. Enfin, quand l&#x27;IA modifie une personne réelle, on le dit à l&#x27;écran : dans mon film, « Vêtements modifiés par IA ». Pour le mème des trois fondateurs, j&#x27;ai eu l&#x27;accord des deux autres avant de publier.</p></div>
+  </section>
+
+  <section class="slide" data-title="CORRIGER AVANT DE PUBLIER : TELLA + CLAUDE/CHATGPT VIA MCP">
+    <h2 class="sr-only">CORRIGER AVANT DE PUBLIER : TELLA + CLAUDE/CHATGPT VIA MCP</h2>
+    <img class="bg" src="../images/s-58.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UN SEUL ENDROIT POUR PUBLIER, APRÈS VALIDATION">
+    <h2 class="sr-only">UN SEUL ENDROIT POUR PUBLIER, APRÈS VALIDATION</h2>
+    <img class="bg" src="../images/s-59.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="UNE DEMANDE, TROIS CANAUX">
+    <h2 class="sr-only">UNE DEMANDE, TROIS CANAUX</h2>
+    <img class="bg" src="../images/s-60.jpg" alt="">
+
+    <div class="notes"><p>Captures réelles du 15 octobre. À gauche, ma demande dans Claude : publier la vidéo sur l&#x27;Instagram et le Facebook d&#x27;Airplan, avec un texte au nom de la marque et pas à mon nom. À droite, les aperçus Postiz : mon post LinkedIn à 8 h 30, celui d&#x27;Airplan sur Instagram à 9 h. Le badge MCP indique que le post a été créé par Claude via le connecteur. Rien ne part sans validation : je relis le texte, et chaque post reste modifiable jusqu&#x27;à l&#x27;heure dite.</p></div>
+  </section>
+
+  <section class="slide" data-title="LE CONTENU EST DEVENU UNE COMMODITÉ. LE JUGEMENT, NON.">
+    <h2 class="sr-only">LE CONTENU EST DEVENU UNE COMMODITÉ. LE JUGEMENT, NON.</h2>
+    <img class="bg" src="../images/s-61.jpg" alt="">
+
+  </section>
+
+  <section class="slide" data-title="www.cefora.be info@cefora.be +32 2 889 42 00">
+    <h2 class="sr-only">www.cefora.be info@cefora.be +32 2 889 42 00</h2>
+    <img class="bg" src="../images/s-62.jpg" alt="">
+
+  </section>
+
+</div>
+
+<div id="progress"></div>
+<div id="counter">01 / 62</div>
+<div id="controls">
+  <button type="button" data-act="prev" aria-label="Previous slide">‹</button>
+  <button type="button" data-act="next" aria-label="Next slide">›</button>
+  <button type="button" data-act="fullscreen" aria-label="Full screen">⛶</button>
+  <button type="button" data-act="notes">Notes</button>
+  <button type="button" data-act="overview">Slides</button>
+  <button type="button" data-act="help" aria-label="Help">?</button>
+</div>
+
+<aside id="notes" hidden>
+  <h2 id="notes-title">Notes</h2>
+  <div id="notes-body"></div>
+</aside>
+
+<div id="overview" class="overlay" hidden>
+  <h2>AI Flash · IA &amp; marketing · 62 slides</h2>
+  <div id="ov-grid"></div>
+</div>
+
+<div id="help" class="overlay" hidden>
+  <div class="card">
+    <h2>Shortcuts</h2>
+    <dl>
+      <dt>→ · space</dt><dd>next step or slide</dd>
+      <dt>←</dt><dd>previous step or slide</dd>
+      <dt>click</dt><dd>right side of the screen: next, left side: previous</dd>
+      <dt>F</dt><dd>full screen</dd>
+      <dt>N</dt><dd>speaker notes (on this screen)</dd>
+      <dt>P</dt><dd>separate presenter window (notes, timer, next slide)</dd>
+      <dt>Esc</dt><dd>slide overview</dd>
+      <dt>Home · End</dt><dd>first · last slide</dd>
+      <dt>?</dt><dd>this help</dd>
+    </dl>
+    <p>Every slide has its own address: add #/7 to the URL to open slide 7.</p>
+  </div>
+</div>
+
+<div id="presenter" hidden>
+  <div class="p-top">
+    <span id="p-count">Slide 1 / 16</span>
+    <span id="p-timer" title="Click to reset">00:00</span>
+  </div>
+  <div class="p-main">
+    <div>
+      <div class="p-now">
+        <div class="lbl">Now</div>
+        <div class="big" id="p-title"></div>
+        <div class="step" id="p-step"></div>
+      </div>
+      <div class="p-next">
+        <div class="lbl">Next click</div>
+        <div class="nx" id="p-next"></div>
+      </div>
+    </div>
+    <div class="p-notes" id="p-notes"></div>
+  </div>
+  <div class="p-bottom">
+    <button type="button" class="pill" data-act="prev">‹ Previous</button>
+    <button type="button" class="pill" data-act="next">Next ›</button>
+    <button type="button" class="pill" data-act="timer">Timer: start / pause</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var n = slides.length;
+  var stage = document.getElementById('stage');
+  var progress = document.getElementById('progress');
+  var counter = document.getElementById('counter');
+  var notesEl = document.getElementById('notes');
+  var notesTitle = document.getElementById('notes-title');
+  var notesBody = document.getElementById('notes-body');
+  var overview = document.getElementById('overview');
+  var help = document.getElementById('help');
+  var presenterEl = document.getElementById('presenter');
+  var isPresenter = /[?&]presenter/.test(location.search);
+  var cur = 0, step = 0;
+
+  function maxStep(i) {
+    var m = 0;
+    slides[i].querySelectorAll('[data-step]').forEach(function (el) {
+      m = Math.max(m, parseInt(el.getAttribute('data-step'), 10) || 0);
+    });
+    return m;
+  }
+  function titleHtml(i) {
+    var t = slides[i].querySelector('.title');
+    return t ? t.innerHTML.replace(/<span class="(\w)">/g, function (m, c) { return c === 'c' ? '<span class="c">' : '<span>'; }).replace(/<\/span>/g, '</span> ') : slides[i].getAttribute('data-title');
+  }
+  function titleText(i) { return slides[i].getAttribute('data-title'); }
+  function notesHtml(i) { var nb = slides[i].querySelector('.notes'); return nb ? nb.innerHTML : ''; }
+
+  /* Channel between deck and presenter window */
+  var bc = null;
+  try { bc = new BroadcastChannel('mm-yes-but-deck'); } catch (e) { bc = null; }
+  function send(msg) {
+    if (bc) { bc.postMessage(msg); return; }
+    try { localStorage.setItem('mm-deck-msg', JSON.stringify(Object.assign({ t: Date.now() }, msg))); } catch (e) {}
+  }
+  function listen(fn) {
+    if (bc) { bc.onmessage = function (e) { fn(e.data); }; return; }
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'mm-deck-msg' && e.newValue) { try { fn(JSON.parse(e.newValue)); } catch (err) {} }
+    });
+  }
+
+  /* Layout: letterboxed 16:9 slide, 1em = 1% of slide width */
+  function layout() {
+    var W = stage.clientWidth, H = stage.clientHeight;
+    var w = Math.min(W, H * 16 / 9), h = w * 9 / 16;
+    var left = (W - w) / 2, top = (H - h) / 2;
+    slides.forEach(function (s) {
+      s.style.width = w + 'px'; s.style.height = h + 'px';
+      s.style.left = left + 'px'; s.style.top = top + 'px';
+      s.style.fontSize = (w / 100) + 'px';
+    });
+    fitTitles(w / 100);
+  }
+  function fitTitles(unit) {
+    slides.forEach(function (s) {
+      var t = s.querySelector('.title');
+      if (!t) return;
+      var center = s.classList.contains('center'), photo = s.classList.contains('has-photo');
+      var size = center ? 26 : (photo ? 11 : 14), maxW = (center ? 88 : (photo ? 46 : 62)) * unit;
+      t.style.fontSize = (size * unit) + 'px';
+      var guard = 0;
+      while (t.scrollWidth > maxW && size > 5 && guard++ < 40) {
+        size -= 0.5;
+        t.style.fontSize = (size * unit) + 'px';
+      }
+    });
+  }
+
+  function applySteps(i) {
+    slides[i].querySelectorAll('[data-step]').forEach(function (el) {
+      var k = parseInt(el.getAttribute('data-step'), 10) || 0;
+      var out = parseInt(el.getAttribute('data-step-out'), 10) || 0;
+      el.classList.toggle('on', k <= step && !(out && step >= out));
+      el.classList.toggle('off', !!out && step >= out);
+    });
+  }
+  function pad(x) { return (x < 10 ? '0' : '') + x; }
+
+  function render() {
+    slides.forEach(function (s, k) {
+      var on = k === cur;
+      s.classList.toggle('active', on);
+      s.setAttribute('aria-hidden', on ? 'false' : 'true');
+    });
+    applySteps(cur);
+    progress.style.width = (n > 1 ? (cur / (n - 1)) * 100 : 100) + '%';
+    counter.textContent = pad(cur + 1) + ' / ' + pad(n);
+    notesTitle.textContent = 'Notes · ' + pad(cur + 1) + ' · ' + titleText(cur);
+    notesBody.innerHTML = notesHtml(cur);
+    var want = '#/' + (cur + 1);
+    if (location.hash !== want) { try { history.replaceState(null, '', want); } catch (e) { try { location.hash = want; } catch (e2) {} } }
+    var items = overview.querySelectorAll('.ov-item');
+    items.forEach(function (b, k) { b.classList.toggle('current', k === cur); });
+    if (isPresenter) renderPresenter();
+  }
+
+  function goTo(i, s, silent) {
+    cur = Math.max(0, Math.min(n - 1, i));
+    step = Math.max(0, Math.min(maxStep(cur), s || 0));
+    render();
+    if (!silent) send({ type: 'state', i: cur, s: step });
+  }
+  function next() {
+    if (step < maxStep(cur)) goTo(cur, step + 1);
+    else if (cur < n - 1) goTo(cur + 1, 0);
+  }
+  function prev() {
+    if (step > 0) goTo(cur, step - 1);
+    else if (cur > 0) goTo(cur - 1, maxStep(cur - 1));
+  }
+
+  function toggleFullscreen() {
+    var d = document;
+    if (!d.fullscreenElement) { (d.documentElement.requestFullscreen || function () {}).call(d.documentElement); }
+    else if (d.exitFullscreen) { d.exitFullscreen(); }
+  }
+  function toggle(el) { el.hidden = !el.hidden; }
+  function closeOverlays() { overview.hidden = true; help.hidden = true; }
+  function openPresenter() {
+    var url = location.pathname + '?presenter=1' + '#/' + (cur + 1);
+    var w = window.open(url, 'mm-presenter', 'width=1100,height=720');
+    if (!w) { help.hidden = false; }
+  }
+
+  /* Overview grid */
+  var grid = document.getElementById('ov-grid');
+  slides.forEach(function (s, k) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'ov-item';
+    b.innerHTML = '<span class="n">' + pad(k + 1) + '</span><span>' + titleHtml(k) + '</span>';
+    var bg = s.querySelector('.bg');
+    if (bg) b.style.backgroundImage = 'linear-gradient(rgba(7,48,58,.35), rgba(7,48,58,.6)), url("' + bg.getAttribute('src') + '")';
+    b.addEventListener('click', function () { closeOverlays(); goTo(k, 0); });
+    grid.appendChild(b);
+  });
+
+  /* Presenter view */
+  var timerStart = null, timerElapsed = 0, timerTick = null;
+  function fmt(ms) { var s = Math.floor(ms / 1000); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); }
+  function timerToggle() {
+    if (timerStart) { timerElapsed += Date.now() - timerStart; timerStart = null; clearInterval(timerTick); timerTick = null; }
+    else { timerStart = Date.now(); timerTick = setInterval(drawTimer, 500); }
+    drawTimer();
+  }
+  function timerReset() { timerElapsed = 0; if (timerStart) timerStart = Date.now(); drawTimer(); }
+  function drawTimer() {
+    var t = timerElapsed + (timerStart ? Date.now() - timerStart : 0);
+    document.getElementById('p-timer').textContent = fmt(t);
+  }
+  function renderPresenter() {
+    document.getElementById('p-count').textContent = 'Slide ' + (cur + 1) + ' / ' + n;
+    document.getElementById('p-title').innerHTML = titleHtml(cur);
+    var ms = maxStep(cur);
+    document.getElementById('p-step').textContent = ms ? 'Step ' + step + ' / ' + ms + (step < ms ? ' · click to reveal more' : ' · everything shown') : 'No steps on this slide';
+    var nx = step < ms ? 'Reveal step ' + (step + 1) + ' / ' + ms : (cur < n - 1 ? 'Slide ' + (cur + 2) + ' · ' + titleText(cur + 1) : 'End of deck');
+    document.getElementById('p-next').textContent = nx;
+    document.getElementById('p-notes').innerHTML = notesHtml(cur);
+  }
+
+  /* Input */
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === ' ' || k === 'PageDown' || k === 'Enter') { e.preventDefault(); next(); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); prev(); }
+    else if (k === 'Home') { goTo(0, 0); }
+    else if (k === 'End') { goTo(n - 1, maxStep(n - 1)); }
+    else if (k === 'f' || k === 'F') { toggleFullscreen(); }
+    else if (k === 'n' || k === 'N') { toggle(notesEl); }
+    else if (k === 'p' || k === 'P') { if (!isPresenter) openPresenter(); }
+    else if (k === 'Escape') { help.hidden = true; toggle(overview); }
+    else if (k === '?' || k === 'h' || k === 'H') { overview.hidden = true; toggle(help); }
+    else if (k === 't' || k === 'T') { if (isPresenter) timerToggle(); }
+  });
+  stage.addEventListener('click', function (e) {
+    if (e.target.closest('button')) return;
+    var x = e.clientX / window.innerWidth;
+    if (x < 0.25) prev(); else next();
+  });
+  var tx = null;
+  stage.addEventListener('touchstart', function (e) { tx = e.changedTouches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (tx === null) return;
+    var dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 40) { if (dx < 0) next(); else prev(); }
+  }, { passive: true });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var a = b.getAttribute('data-act');
+    if (a === 'prev') prev();
+    else if (a === 'next') next();
+    else if (a === 'fullscreen') toggleFullscreen();
+    else if (a === 'notes') toggle(notesEl);
+    else if (a === 'overview') { help.hidden = true; toggle(overview); }
+    else if (a === 'help') { overview.hidden = true; toggle(help); }
+    else if (a === 'timer') timerToggle();
+  });
+  document.getElementById('p-timer').addEventListener('click', timerReset);
+  var hideTimer = null;
+  document.addEventListener('mousemove', function () {
+    document.body.classList.add('show-controls');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { document.body.classList.remove('show-controls'); }, 2500);
+  });
+  window.addEventListener('hashchange', function () {
+    var m = location.hash.match(/^#\/(\d+)/);
+    if (m) { var i = parseInt(m[1], 10) - 1; if (i !== cur) goTo(i, 0); }
+  });
+  window.addEventListener('resize', layout);
+
+  /* Sync */
+  listen(function (m) {
+    if (!m || !m.type) return;
+    if (isPresenter) { if (m.type === 'state') goTo(m.i, m.s, true); }
+    else {
+      if (m.type === 'goto') goTo(m.i, m.s, true);
+      if (m.type === 'hello') send({ type: 'state', i: cur, s: step });
+    }
+  });
+  if (isPresenter) {
+    document.body.classList.add('presenter');
+    presenterEl.hidden = false;
+    var _goTo = goTo;
+    goTo = function (i, s, silent) { _goTo(i, s, true); if (!silent) send({ type: 'goto', i: cur, s: step }); };
+    send({ type: 'hello' });
+    timerToggle();
+  }
+
+  /* Boot */
+  var m0 = location.hash.match(/^#\/(\d+)/);
+  layout();
+  goTo(m0 ? parseInt(m0[1], 10) - 1 : 0, 0, true);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layout); }
+  window.addEventListener('load', layout);
+})();
+</script>
+
+<script>
+/* Vidéos : un clic dessus ne change pas de slide ; elles se mettent en pause quand on quitte la slide. */
+(function () {
+  document.querySelectorAll('.slide .vid').forEach(function (v) {
+    ['touchstart', 'touchend', 'mousedown', 'pointerdown'].forEach(function (ev) {
+      v.addEventListener(ev, function (e) { e.stopPropagation(); }, { passive: true });
+    });
+    v.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (e.offsetY < v.clientHeight - 48) { e.preventDefault(); if (v.paused) v.play(); else v.pause(); }
+    });
+  });
+  new MutationObserver(function () {
+    document.querySelectorAll('.slide:not(.active) .vid').forEach(function (v) { if (!v.paused) v.pause(); });
+  }).observe(document.getElementById('stage'), { attributes: true, subtree: true, attributeFilter: ['class'] });
+})();
+</script>
+</body>
+</html>
